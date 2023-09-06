@@ -9,10 +9,10 @@ pipeline {
             steps {
                 git url: 'https://github.com/saurabhdevops123/game-of-life.git',
                     branch: 'declarative'
-
-                }
+                
             }
-        stage('package')  {
+        }
+        stage('package') {
             tools {
                 jdk 'JDK_8_UBUNTU'
             }
@@ -20,18 +20,26 @@ pipeline {
                 sh "mvn ${params.MAVEN_GOAL}"
             }
         }
-        stage('copy build') {
-            steps {
-                sh 'mkdir -p /tmp/${JOB_NAME}/${BUILD_ID} && cp ./gameoflife-web/target/gameoflife.war /tmp/${JOB_NAME}/${BUILD_ID}/'
-            }
-        }
-
         stage('post build') {
             steps {
                 archiveArtifacts artifacts: '**/target/gameoflife.war',
                                  onlyIfSuccessful: true
                 junit testResults: '**/surefire-reports/TEST-*.xml'
             }
+        }
+    }
+    post {
+        success {
+            mail subject: "Jenkins Build of ${JOB_NAME} with id ${BUILD_ID} is success",
+                body: "use this url ${BUILD_URL} for more info",
+                to:'team-all-qt@qt.com',
+                from:'devops@qt.com'
+        }
+        failure {
+            mail subject: "Jenkins Build of ${JOB_NAME} with id ${BUILD_ID} is failure",
+            body: "use this url ${BUILD_URL} for more info",
+            to:"${GIT_AUTHOR_EMAIL}",
+            from:'devops@qt.com'
         }
     }
 }
